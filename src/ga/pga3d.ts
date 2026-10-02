@@ -1369,20 +1369,22 @@ export function exp(out: PGA3D, b: Const<PGA3D>): PGA3D {
     const b12 = b[8];
     const b31 = b[9];
     const b23 = b[10];
+    // l is the squared rotation angle and m the pitch term, b * b = -l + 2 m e0123
     const l = b12 * b12 + b31 * b31 + b23 * b23;
-    identity(out);
-    if (l === 0) {
-        // ideal line, a pure translation
-        out[5] = b01;
-        out[6] = b02;
-        out[7] = b03;
-        return out;
-    }
     const m = b01 * b23 + b02 * b31 + b03 * b12;
     const a = Math.sqrt(l);
     const c = Math.cos(a);
-    const s = Math.sin(a) / a;
-    const t = (m / l) * (c - s);
+    // s = sin(a) / a and t = m (cos(a) - s) / l, with Taylor series below l = 1e-3 where they are accurate to 1e-16
+    let s: number;
+    let t: number;
+    if (l < 1e-3) {
+        s = 1 - (l / 6) * (1 - (l / 20) * (1 - l / 42));
+        t = m * (-1 / 3 + l * (1 / 30 - l * (1 / 840 - l / 45360)));
+    } else {
+        s = Math.sin(a) / a;
+        t = (m * (c - s)) / l;
+    }
+    identity(out);
     out[0] = c;
     out[5] = s * b01 + t * b23;
     out[6] = s * b02 + t * b31;
@@ -1396,6 +1398,7 @@ export function exp(out: PGA3D, b: Const<PGA3D>): PGA3D {
 
 /**
  * Logarithm of a normalized motor, the inverse of {@link pga3d.exp}. Returns the bivector b with exp(b) = m.
+ * The result rotates by at most 2 pi. Near a rotation by 2 pi, a scalar part close to -1, the log is singular.
  *
  * @param out the receiving multivector
  * @param m a normalized motor
@@ -1410,19 +1413,29 @@ export function log(out: PGA3D, m: Const<PGA3D>): PGA3D {
     const m31 = m[9];
     const m23 = m[10];
     const m0123 = m[15];
+    // m = cos(a) + sin(a) u + ideal terms, with a the half rotation angle and u the unit rotation axis
+    const sigma2 = m12 * m12 + m31 * m31 + m23 * m23;
+    const sigma = Math.sqrt(sigma2);
+    const a = Math.atan2(sigma, s);
+    // b = a / sin(a) scales the bivector and c = m0123 (1 - a cot(a)) / sin(a)^2 corrects the moment for the pitch
+    let b: number;
+    let c: number;
+    if (sigma === 0) {
+        // no rotation, a pure translation. A scalar part of -1 is a full turn, the same as the identity
+        b = s < 0 ? -1 : 1;
+        c = 0;
+    } else if (a * a < 1e-4) {
+        // Taylor series of c in a^2, accurate to 1e-16 below the cutoff
+        const a2 = a * a;
+        b = a / sigma;
+        c = m0123 * (1 / 3 + a2 * (2 / 15 + a2 * (2 / 63 + (a2 * 4) / 675)));
+    } else {
+        b = a / sigma;
+        c = (m0123 * (1 - (a * s) / sigma)) / sigma2;
+    }
     for (let i = 0; i < 16; i++) {
         out[i] = 0;
     }
-    if (Math.abs(s) >= 1 - EPSILON) {
-        // no rotation, a pure translation
-        out[5] = m01;
-        out[6] = m02;
-        out[7] = m03;
-        return out;
-    }
-    const a = 1 / (1 - s * s);
-    const b = Math.acos(s) * Math.sqrt(a);
-    const c = a * m0123 * (1 - s * b);
     out[5] = c * m23 + b * m01;
     out[6] = c * m31 + b * m02;
     out[7] = c * m12 + b * m03;

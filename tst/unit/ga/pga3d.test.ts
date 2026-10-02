@@ -302,6 +302,59 @@ describe('pga3d', () => {
             const t = pga3d.fromTranslation(pga3d.create(), [1, 2, 3]);
             expect(pga3d.log(pga3d.create(), t)).toEqual([0, 0, 0, 0, 0, -0.5, -1, -1.5, 0, 0, 0, 0, 0, 0, 0, 0]);
         });
+
+        it('log of a full turn translator is the same translation', () => {
+            const t = pga3d.scale(pga3d.create(), pga3d.fromTranslation(pga3d.create(), [1, 2, 3]), -1);
+            expect(pga3d.log(pga3d.create(), t)).toEqual([0, 0, 0, 0, 0, -0.5, -1, -1.5, 0, 0, 0, 0, 0, 0, 0, 0]);
+        });
+
+        it('exp of a screw along z matches the closed form at tiny and moderate angles', () => {
+            // exp(h e12 + d e03) = cos h + sin h e12 + d cos h e03 + d sin h e0123
+            const d = 0.75;
+            for (const h of [1e-8, 1e-4, 0.03, 0.04, 0.5]) {
+                const m = pga3d.exp(pga3d.create(), [0, 0, 0, 0, 0, 0, 0, d, h, 0, 0, 0, 0, 0, 0, 0]);
+                const expected: PGA3D = [
+                    Math.cos(h),
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    d * Math.cos(h),
+                    Math.sin(h),
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    d * Math.sin(h),
+                ];
+                for (let i = 0; i < 16; i++) {
+                    expect(m[i]).toBeCloseTo(expected[i], 15);
+                }
+            }
+        });
+
+        it('log recovers a screw with a 1e-8 rad rotation', () => {
+            // half angle 5e-9 around the tilted line through (1, -2, 0.5), with a translation along it
+            const axis = vec3.normalize(vec3.create(), [1, 2, 3]);
+            const moment = vec3.cross(vec3.create(), [1, -2, 0.5], axis);
+            const h = 5e-9;
+            const b: PGA3D = [0, 0, 0, 0, 0, 0, 0, 0, h * axis[2], h * axis[1], h * axis[0], 0, 0, 0, 0, 0];
+            b[5] = h * moment[0] + 0.4 * axis[0];
+            b[6] = h * moment[1] + 0.4 * axis[1];
+            b[7] = h * moment[2] + 0.4 * axis[2];
+            const m = pga3d.exp(pga3d.create(), b);
+            const result = pga3d.log(pga3d.create(), m);
+            for (const i of [8, 9, 10]) {
+                expect(result[i] / b[i]).toBeCloseTo(1, 12);
+            }
+            for (let i = 0; i < 16; i++) {
+                expect(pga3d.exp(pga3d.create(), result)[i]).toBeCloseTo(m[i], 12);
+            }
+        });
     });
 
     describe('grade', () => {
