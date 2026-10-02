@@ -18,6 +18,7 @@ Every type is a plain fixed-length tuple of numbers — no classes, no wrappers,
 - `Euler` `[x, y, z, order?]`, radians, order defaulting to `'xyz'`
 - `Mat2` (4), `Mat2d` (6), `Mat3` (9), `Mat4` (16) — contiguous and column-major, with `Mat4` translation in `m[12]`, `m[13]`, `m[14]`
 - `Polar` `[r, theta]`, `Spherical` `[r, theta, phi]`
+- `PGA3D` (16) — a 3D projective geometric algebra multivector from `math/ga`, in bivector.net blade order. Motors are the even part and map to `Quat2`
 
 ## Style
 
