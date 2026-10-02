@@ -998,13 +998,14 @@ export function invert(out: PGA3D, a: Const<PGA3D>): PGA3D {
     const a13 = a[13];
     const a14 = a[14];
     const a15 = a[15];
-    // inverse = reverse(a) * (s + t e0123) ^ -1 = reverse(a) * (1/s - t/s^2 e0123)
+    // inverse = reverse(a) * (s + t e0123) ^ -1 = reverse(a) * (1/s - t/s^2 e0123), multiplied on the right,
+    // so the e0123 term flips sign on the odd grades, which anticommute with e0123
     const s = a0 * a0 + a2 * a2 + a3 * a3 + a4 * a4 + a8 * a8 + a9 * a9 + a10 * a10 + a14 * a14;
     const t = 2 * (a0 * a15 - a5 * a10 - a6 * a9 - a7 * a8 - a1 * a14 - a2 * a13 - a3 * a12 - a4 * a11);
     const alpha = 1 / s;
     const beta = -t / (s * s);
     out[0] = alpha * a0;
-    out[1] = alpha * a1 + beta * a14;
+    out[1] = alpha * a1 - beta * a14;
     out[2] = alpha * a2;
     out[3] = alpha * a3;
     out[4] = alpha * a4;
@@ -1014,9 +1015,9 @@ export function invert(out: PGA3D, a: Const<PGA3D>): PGA3D {
     out[8] = -alpha * a8;
     out[9] = -alpha * a9;
     out[10] = -alpha * a10;
-    out[11] = -alpha * a11 - beta * a4;
-    out[12] = -alpha * a12 - beta * a3;
-    out[13] = -alpha * a13 - beta * a2;
+    out[11] = -alpha * a11 + beta * a4;
+    out[12] = -alpha * a12 + beta * a3;
+    out[13] = -alpha * a13 + beta * a2;
     out[14] = -alpha * a14;
     out[15] = alpha * a15 + beta * a0;
     return out;

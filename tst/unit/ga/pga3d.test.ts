@@ -274,6 +274,19 @@ describe('pga3d', () => {
             const planeCheck = pga3d.multiply(pga3d.create(), pga3d.invert(pga3d.create(), plane), plane);
             expectClose(planeCheck, pga3d.identity(pga3d.create()));
         });
+
+        it('inverts an odd element whose norm has an e0123 part from both sides', () => {
+            const drifted = pga3d.scale(pga3d.create(), screwMotor(), 1.3);
+            drifted[15] += 0.2;
+            const a = pga3d.multiply(pga3d.create(), pga3d.plane(pga3d.create(), 3, 0, 4, 7), drifted);
+            const inverse = pga3d.invert(pga3d.create(), a);
+            const left = pga3d.multiply(pga3d.create(), inverse, a);
+            const right = pga3d.multiply(pga3d.create(), a, inverse);
+            for (let i = 0; i < 16; i++) {
+                expect(left[i]).toBeCloseTo(i === 0 ? 1 : 0, 12);
+                expect(right[i]).toBeCloseTo(i === 0 ? 1 : 0, 12);
+            }
+        });
     });
 
     describe('exp and log', () => {
