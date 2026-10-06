@@ -13,6 +13,7 @@ overview, installation, and examples, see the [README](./README.md).
 - [`math/noise`](#api-math-noise) — Perlin, simplex & worley noise, plus fractal helpers
 - [`math/color`](#api-math-color) — Color & colorspace utilities
 - [`math/ik`](#api-math-ik) — Inverse kinematics
+- [`math/ga`](#api-math-ga) — Projective geometric algebra
 
 ---
 
@@ -1603,3 +1604,67 @@ import { fabrik3 } from 'math/ik';
 - `fabrik3.getBoneDirection(out: Vec3, chain: Chain3, index: number): Vec3` — Writes the unit direction of bone `index`, from its start toward its end, into `out`.
 - `fabrik3.getBoneRotation(out: Quat, chain: Chain3, index: number, up: Vec3): Quat` — Writes the rotation taking `up` onto the direction of bone `index` into `out`.
 - `fabrik3.isReachable(chain: Chain3, target: Vec3): boolean` — Whether `target` is within reach of the chain's base, so a solve can place the effector exactly on it.
+
+<a id="api-math-ga"></a>
+
+## `math/ga`
+
+- `type PGA3D = [ s: number, e0: number, e1: number, e2: number, e3: number, e01: number, e02: number, e03: number, e12: number, e31: number, e23: number, e021: number, e013: number, e032: number, e123: number, e0123: number ]` — A multivector of 3D projective geometric algebra, Cl(3,0,1), where e0 squares to 0 and e1, e2, e3 square to 1.
+
+<a id="api-math-ga-pga3d"></a>
+
+### `pga3d`
+
+```ts
+import { pga3d } from 'math/ga';
+```
+
+**Create**
+
+- `pga3d.create(): PGA3D` — Creates a new zero multivector
+- `pga3d.clone(a: Const<PGA3D>): PGA3D` — Creates a new multivector initialized with values from an existing multivector
+- `pga3d.copy(out: PGA3D, a: Const<PGA3D>): PGA3D` — Copy the values from one multivector to another
+- `pga3d.identity(out: PGA3D): PGA3D` — Set a multivector to the scalar 1, the identity motor
+- `pga3d.toVec3(out: Vec3, p: Const<PGA3D>): Vec3` — Reads the euclidean coordinates of a point, dividing out the homogeneous e123 weight
+- `pga3d.fromTranslation(out: PGA3D, v: Const<Vec3>): PGA3D` — Sets a multivector to the motor that translates by the given vector
+- `pga3d.fromAxisAngle(out: PGA3D, axis: Const<Vec3>, rad: number): PGA3D` — Sets a multivector to the motor that rotates around an axis through the origin.
+- `pga3d.fromQuat2(out: PGA3D, q: Const<Quat2>): PGA3D` — Sets a multivector to the motor equivalent to a dual quaternion
+- `pga3d.toQuat2(out: Quat2, m: Const<PGA3D>): Quat2` — Converts the even part of a multivector to a dual quaternion
+- `pga3d.str(a: Const<PGA3D>): string` — Returns a string representation of a multivector, listing the non zero blades
+
+**Operations**
+
+- `pga3d.plane(out: PGA3D, a: number, b: number, c: number, d: number): PGA3D` — Sets a multivector to the plane ax + by + cz + d = 0
+- `pga3d.point(out: PGA3D, x: number, y: number, z: number): PGA3D` — Sets a multivector to the normalized point (x, y, z)
+- `pga3d.add(out: PGA3D, a: Const<PGA3D>, b: Const<PGA3D>): PGA3D` — Adds two multivectors
+- `pga3d.subtract(out: PGA3D, a: Const<PGA3D>, b: Const<PGA3D>): PGA3D` — Subtracts multivector b from multivector a
+- `pga3d.scale(out: PGA3D, a: Const<PGA3D>, b: number): PGA3D` — Scales a multivector by a scalar number
+- `pga3d.grade(out: PGA3D, a: Const<PGA3D>, k: number): PGA3D` — Keeps the components of a single grade and zeroes the rest
+- `pga3d.multiply(out: PGA3D, a: Const<PGA3D>, b: Const<PGA3D>): PGA3D` — Geometric product of two multivectors. Composes motors: multiply(out, b, a) applies a then b.
+- `pga3d.wedge(out: PGA3D, a: Const<PGA3D>, b: Const<PGA3D>): PGA3D` — Outer product of two multivectors, the meet. Two planes meet in a line, a line and a plane meet in a point.
+- `pga3d.vee(out: PGA3D, a: Const<PGA3D>, b: Const<PGA3D>): PGA3D` — Regressive product of two multivectors, the join. Two points join into the line from a to b
+- `pga3d.dot(out: PGA3D, a: Const<PGA3D>, b: Const<PGA3D>): PGA3D` — Symmetric inner product of two multivectors, keeping the terms of grade |grade(a) - grade(b)|.
+- `pga3d.reverse(out: PGA3D, a: Const<PGA3D>): PGA3D` — Reverse of a multivector, flipping the sign of grades 2 and 3. The inverse of a normalized motor.
+- `pga3d.involute(out: PGA3D, a: Const<PGA3D>): PGA3D` — Grade involution of a multivector, flipping the sign of the odd grades
+- `pga3d.conjugate(out: PGA3D, a: Const<PGA3D>): PGA3D` — Clifford conjugate of a multivector, flipping the sign of grades 1 and 2
+- `pga3d.dual(out: PGA3D, a: Const<PGA3D>): PGA3D` — Hodge dual of a multivector, mapping each blade b to the blade d with b ^ d = e0123.
+- `pga3d.undual(out: PGA3D, a: Const<PGA3D>): PGA3D` — Inverse of the Hodge dual, so that undual(dual(a)) equals a
+- `pga3d.norm(a: Const<PGA3D>): number` — Calculates the norm of a multivector, the square root of the scalar part of a * reverse(a).
+- `pga3d.idealNorm(a: Const<PGA3D>): number` — Calculates the ideal norm of a multivector, the norm of its dual.
+- `pga3d.normalize(out: PGA3D, a: Const<PGA3D>): PGA3D` — Normalizes a versor so that a * reverse(a) = 1. Works for planes, points, lines and motors
+- `pga3d.invert(out: PGA3D, a: Const<PGA3D>): PGA3D` — Calculates the inverse of a versor, so that multiply(out, a) = 1.
+- `pga3d.sandwich(out: PGA3D, m: Const<PGA3D>, x: Const<PGA3D>): PGA3D` — Sandwich product m * x * reverse(m). Applies the motor m to a point, line, plane or other motor x.
+- `pga3d.exp(out: PGA3D, b: Const<PGA3D>): PGA3D` — Exponential of a bivector, giving the motor that rotates and translates along the line it describes.
+- `pga3d.log(out: PGA3D, m: Const<PGA3D>): PGA3D` — Logarithm of a normalized motor, the inverse of pga3d.exp . Returns the bivector b with exp(b) = m.
+
+**Query**
+
+- `pga3d.exactEquals(a: Const<PGA3D>, b: Const<PGA3D>): boolean` — Returns whether or not the multivectors have exactly the same elements in the same position (when compared with ===)
+- `pga3d.equals(a: Const<PGA3D>, b: Const<PGA3D>): boolean` — Returns whether or not the multivectors have approximately the same elements in the same position
+
+**Aliases**
+
+- `pga3d.sub = subtract` — Alias for `subtract`
+- `pga3d.mul = multiply` — Alias for `multiply`
+- `pga3d.meet = wedge` — Alias for `wedge`
+- `pga3d.join = vee` — Alias for `vee`

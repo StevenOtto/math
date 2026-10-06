@@ -229,6 +229,7 @@ const API_GROUP_DESCRIPTIONS = {
   "math/noise": "Perlin, simplex & worley noise, plus fractal helpers",
   "math/color": "Color & colorspace utilities",
   "math/ik": "Inverse kinematics",
+  "math/ga": "Projective geometric algebra",
 };
 
 // the generated full reference lives in a separate file so the README stays a
